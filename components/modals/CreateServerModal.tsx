@@ -7,19 +7,22 @@ import { CreateServerRequest, CreateServerValidator } from "@/lib/validators/cre
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { useEffect, useState } from "react";
 import FileUpload from "../FileUpload";
 import axios from 'axios';
 import { useRouter } from "next/navigation";
+import { useModal } from "@/hooks/useModalStore";
 
-const InitialModal = () => {
+const CreateServerModal = () => {
 
-    const [isMounted, setIsMounted] = useState<boolean>(false);
     const router = useRouter();
+    const {
+        isOpen,
+        onClose,
+        onOpen,
+        type
+    } = useModal();
 
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
+    const isModalOpen = isOpen && type === 'createServer';
 
     const form = useForm({
         resolver: zodResolver(CreateServerValidator),
@@ -36,19 +39,19 @@ const InitialModal = () => {
             await axios.post('/api/servers', data);
             form.reset();
             router.refresh();
-            window.location.reload();
-
+            onClose();
         } catch (e) {
             console.log(e);
         }
     }
 
-    if (!isMounted) {
-        return null;
+    const handleClose = () => {
+        form.reset();
+        onClose();
     }
 
     return (
-        <Dialog open>
+        <Dialog open={isModalOpen} onOpenChange={handleClose} >
             <DialogContent className="bg-white text-black p-0 overflow-hidden">
                 <DialogHeader className="pt-8 px-6">
                     <DialogTitle className="text-2xl text-center font-bold">
@@ -78,7 +81,6 @@ const InitialModal = () => {
                                         </FormItem>
                                     )} />
                             </div>
-
                             <FormField
                                 control={form.control}
                                 name='name'
@@ -112,4 +114,4 @@ const InitialModal = () => {
     );
 }
 
-export default InitialModal;
+export default CreateServerModal;
