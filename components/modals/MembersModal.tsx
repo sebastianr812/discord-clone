@@ -40,11 +40,11 @@ const MembersModal = () => {
 
     const onRoleChange = async (memberId: string, role: MemberRole) => {
         try {
+            setLoadingId(memberId);
             const url = qs.stringifyUrl({
                 url: `/api/members/${memberId}`,
                 query: {
                     serverId: server?.id,
-                    memberId
                 }
             });
             const { data } = await axios.patch(url, { role });
@@ -53,7 +53,26 @@ const MembersModal = () => {
         } catch (e) {
             console.log(e);
         } finally {
+            setLoadingId('');
+        }
+    }
+
+    const onKick = async (memberId: string) => {
+        try {
             setLoadingId(memberId);
+            const url = qs.stringifyUrl({
+                url: `/api/members/${memberId}`,
+                query: {
+                    serverId: server?.id
+                }
+            });
+            const { data } = await axios.delete(url);
+            router.refresh();
+            onOpen('members', { server: data });
+        } catch (e) {
+            console.log(e);
+        } finally {
+            setLoadingId('');
         }
     }
 
@@ -69,7 +88,7 @@ const MembersModal = () => {
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="mt-8 max-h-[420-px] pr-6">
-                    {server.members.map((member) => (
+                    {server?.members?.map((member) => (
                         <div key={member.id} className="flex items-center gap-x-2 mb-6">
                             <UserAvatar src={member.profile.imageUrl} />
                             <div className="flex flex-col gap-y-1">
@@ -114,7 +133,7 @@ const MembersModal = () => {
                                                     </DropdownMenuPortal>
                                                 </DropdownMenuSub>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => onKick(member.id)}>
                                                     <Gavel className="h-4 w-4 mr-2" />
                                                     Kick
                                                 </DropdownMenuItem>
