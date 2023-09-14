@@ -56,10 +56,13 @@ model Member {
   serverId  String
   server    Server     @relation(fields: [serverId], references: [id], onDelete: Cascade)
   messages Message[]
+  directMessages DirectMessage[]
+
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  conversationsInitated Convesation[] @relation("MemberOne")
+  conversationsInitated Conversation[] @relation("MemberOne")
+  conversationsReceived Conversation[] @relation("MemberTwo")
 
   @@index([profileId])
   @@index([serverId])
@@ -112,12 +115,36 @@ model Message {
   @@index([channelId])
 }
 
-model Convesation {
+model Conversation {
   id String @id @default(cuid())
 
   memberOneId String
   memberOne Member @relation(name: "MemberOne", fields: [memberOneId], references: [id], onDelete: Cascade)
   memberTwoId String
-  // Finish up relation from member to conversation
   memberTwo Member @relation(name: "MemberTwo", fields: [memberTwoId], references: [id], onDelete: Cascade)
+
+  directMessages DirectMessage[]
+
+  @@index([memberTwoId])
+
+  @@unique([memberOneId, memberTwoId])
+}
+
+model DirectMessage {
+  id String @id @default(cuid())
+  content String @db.Text
+  fileUrl String? @db.Text
+
+  memberId String
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  conversationId String
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([memberId])
+  @@index([conversationId])
+
 }
