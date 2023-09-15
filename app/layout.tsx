@@ -1,40 +1,42 @@
-import { ClerkProvider } from '@clerk/nextjs'
-import './globals.css'
-import type { Metadata } from 'next'
-import { Open_Sans } from 'next/font/google'
-import { ThemeProvider } from '@/components/providers/theme-provider'
-import { cn } from '@/lib/utils'
-import { ModalProvider } from '@/components/providers/modal-provider'
+import { ClerkProvider } from "@clerk/nextjs";
+import "./globals.css";
+import type { Metadata } from "next";
+import { Open_Sans } from "next/font/google";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { cn } from "@/lib/utils";
+import { ModalProvider } from "@/components/providers/modal-provider";
+import { SocketProvider } from "@/components/providers/SocketProvider";
 
-const font = Open_Sans({ subsets: ['latin'] })
+const font = Open_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Discord Clone',
-  description: 'A clone of the popular Discord messaging application owned by Microsoft, the purpose of this project is to learn/improve my coding abilities!',
-}
+  title: "Discord Clone",
+  description:
+    "A clone of the popular Discord messaging application owned by Microsoft, the purpose of this project is to learn/improve my coding abilities!",
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={cn(
-          font.className,
-          'bg-white dark:bg-[#313338]'
-        )}>
+        <body className={cn(font.className, "bg-white dark:bg-[#313338]")}>
           <ThemeProvider
-            attribute='class'
-            defaultTheme='dark'
+            attribute="class"
+            defaultTheme="dark"
             enableSystem={false}
-            storageKey='discord-theme'>
-            <ModalProvider />
-            {children}
+            storageKey="discord-theme"
+          >
+            <SocketProvider>
+              <ModalProvider />
+              {children}
+            </SocketProvider>
           </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>
-  )
+  );
 }
