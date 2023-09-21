@@ -15,6 +15,8 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import qs from "query-string";
 import axios from "axios";
+import * as z from "zod";
+import { useModal } from "@/hooks/useModalStore";
 
 interface ChatItemProps {
   id: string;
@@ -37,6 +39,11 @@ const roleIconMap = {
   ADMIN: <ShieldAlert className="w-4 h-4 ml-2 text-rose-500" />,
 };
 
+// test
+const formShema = z.object({
+  content: z.string().min(1),
+});
+//
 const ChatItem: FC<ChatItemProps> = ({
   content,
   currentMember,
@@ -59,10 +66,10 @@ const ChatItem: FC<ChatItemProps> = ({
   const isPdf = fileType === "pdf" && fileUrl;
   const isImage = !isPdf && fileUrl;
 
-  const form = useForm<ChatRequest>({
-    resolver: zodResolver(ChatValidator),
+  const form = useForm<z.infer<typeof formShema>>({
+    resolver: zodResolver(formShema),
     defaultValues: {
-      content,
+      content: content,
     },
   });
 
@@ -87,15 +94,18 @@ const ChatItem: FC<ChatItemProps> = ({
   }, []);
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const { onOpen } = useModal();
 
-  const onSubmit = async (data: ChatRequest) => {
+  const onSubmit = async (data: z.infer<typeof formShema>) => {
     try {
       const url = qs.stringifyUrl({
         url: `${socketUrl}/${id}`,
         query: socketQuery,
       });
       await axios.patch(url, data);
+
+      form.reset();
+      setIsEditing(false);
     } catch (e) {
       console.log(e);
     }
@@ -213,7 +223,15 @@ const ChatItem: FC<ChatItemProps> = ({
             </ActionTooltip>
           )}
           <ActionTooltip label="Delete">
-            <Trash className="w-4 h-4 ml-auto transition cursor-pointer text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300" />
+            <Trash
+              className="w-4 h-4 ml-auto transition cursor-pointer text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-300"
+              onClick={() =>
+                onOpen("deleteMessage", {
+                  apiUrl: `${socketUrl}/${id}`,
+                  query: socketQuery,
+                })
+              }
+            />
           </ActionTooltip>
         </div>
       )}

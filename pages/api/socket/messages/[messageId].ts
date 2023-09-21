@@ -4,7 +4,7 @@ import { NextApiResponseServerIo } from "@/types";
 import { MemberRole } from "@prisma/client";
 import { NextApiRequest } from "next";
 
-export async function handler(
+export default async function handler(
   req: NextApiRequest,
   res: NextApiResponseServerIo
 ) {
@@ -111,8 +111,29 @@ export async function handler(
     }
 
     if (req.method === "PATCH") {
-      // TODO: update message to new one passed in the request
+      if (!isMessageOwner) {
+        return res.status(401).json({ message: "unauthorized" });
+      }
+      message = await db.message.update({
+        where: {
+          id: messageId as string,
+        },
+        data: {
+          content,
+        },
+        include: {
+          member: {
+            include: {
+              profile: true,
+            },
+          },
+        },
+      });
     }
+    const updateKey = `chat:${channelId}:messages:update`;
+
+    res?.socket?.server?.io?.emit(updateKey, message);
+    return res.status(200).json({ message });
   } catch (e) {
     console.log("MESSAGEID", e);
     return res.status(500).json({ error: "internal error bro" });
