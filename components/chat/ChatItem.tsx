@@ -17,6 +17,7 @@ import qs from "query-string";
 import axios from "axios";
 import * as z from "zod";
 import { useModal } from "@/hooks/useModalStore";
+import { useParams, useRouter } from "next/navigation";
 
 interface ChatItemProps {
   id: string;
@@ -39,11 +40,6 @@ const roleIconMap = {
   ADMIN: <ShieldAlert className="w-4 h-4 ml-2 text-rose-500" />,
 };
 
-// test
-const formShema = z.object({
-  content: z.string().min(1),
-});
-//
 const ChatItem: FC<ChatItemProps> = ({
   content,
   currentMember,
@@ -56,8 +52,10 @@ const ChatItem: FC<ChatItemProps> = ({
   socketUrl,
   timestamp,
 }) => {
-  const fileType = fileUrl?.split(".").pop();
+  const router = useRouter();
+  const params = useParams();
 
+  const fileType = fileUrl?.split(".").pop();
   const isAdmin = currentMember.role === MemberRole.ADMIN;
   const isModerator = currentMember.role === MemberRole.MODERATOR;
   const isOwner = currentMember.id === member.id;
@@ -66,8 +64,8 @@ const ChatItem: FC<ChatItemProps> = ({
   const isPdf = fileType === "pdf" && fileUrl;
   const isImage = !isPdf && fileUrl;
 
-  const form = useForm<z.infer<typeof formShema>>({
-    resolver: zodResolver(formShema),
+  const form = useForm<ChatRequest>({
+    resolver: zodResolver(ChatValidator),
     defaultValues: {
       content: content,
     },
@@ -96,7 +94,7 @@ const ChatItem: FC<ChatItemProps> = ({
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const { onOpen } = useModal();
 
-  const onSubmit = async (data: z.infer<typeof formShema>) => {
+  const onSubmit = async (data: ChatRequest) => {
     try {
       const url = qs.stringifyUrl({
         url: `${socketUrl}/${id}`,
@@ -111,16 +109,29 @@ const ChatItem: FC<ChatItemProps> = ({
     }
   };
 
+  const onMemberClick = () => {
+    if (member.id === currentMember.id) {
+      return;
+    }
+    router.push(`/servers/${params?.serverId}/conversations/${member.id}`);
+  };
+
   return (
     <div className="relative flex items-center w-full p-4 transition group hover:bg-black/5">
       <div className="flex items-start w-full group gap-x-2">
-        <div className="transition cursor-pointer hover:drop-shadow-md">
+        <div
+          className="transition cursor-pointer hover:drop-shadow-md"
+          onClick={onMemberClick}
+        >
           <UserAvatar src={member.profile.imageUrl} />
         </div>
         <div className="flex flex-col w-full">
           <div className="flex items-center gap-x-2">
             <div className="flex items-center">
-              <p className="text-sm font-semibold cursor-pointer hover:underline">
+              <p
+                className="text-sm font-semibold cursor-pointer hover:underline"
+                onClick={onMemberClick}
+              >
                 {member.profile.name}
               </p>
               <ActionTooltip label={member.role}>
